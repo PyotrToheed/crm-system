@@ -1,6 +1,7 @@
 "use client";
 
 import { CustomersTable } from "@/components/customers/customers-table";
+import { BulkImportDialog } from "@/components/bulk-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
 import {
@@ -31,20 +32,23 @@ export function CustomersClient({ data, userRole, initialSearch }: CustomersClie
                     <p className="text-muted-foreground mt-2">{t("nav.customers")}</p>
                 </div>
 
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            {t("customers.add")}
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px]" dir={dir}>
-                        <DialogHeader>
-                            <DialogTitle>{t("customers.add_title")}</DialogTitle>
-                        </DialogHeader>
-                        <CustomerForm />
-                    </DialogContent>
-                </Dialog>
+                <div className="flex gap-2">
+                    <BulkImportDialog type="customers" />
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                {t("customers.add")}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]" dir={dir}>
+                            <DialogHeader>
+                                <DialogTitle>{t("customers.add_title")}</DialogTitle>
+                            </DialogHeader>
+                            <CustomerForm />
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             <div className="flex items-center gap-4 bg-white p-4 rounded-lg border">

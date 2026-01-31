@@ -1,6 +1,7 @@
 "use client";
 
 import { LeadsTable } from "@/components/leads/leads-table";
+import { BulkImportDialog } from "@/components/bulk-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
 import {
@@ -32,20 +33,23 @@ export function LeadsClient({ data, userRole, initialSearch }: LeadsClientProps)
                     <p className="text-muted-foreground mt-2">{t("nav.leads")}</p>
                 </div>
 
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            {t("leads.add")}
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px]" dir={dir}>
-                        <DialogHeader>
-                            <DialogTitle>{t("leads.add")}</DialogTitle>
-                        </DialogHeader>
-                        <LeadForm />
-                    </DialogContent>
-                </Dialog>
+                <div className="flex gap-2">
+                    <BulkImportDialog type="leads" />
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                {t("leads.add")}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]" dir={dir}>
+                            <DialogHeader>
+                                <DialogTitle>{t("leads.add")}</DialogTitle>
+                            </DialogHeader>
+                            <LeadForm />
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             <div className="flex items-center gap-4 bg-white p-4 rounded-lg border">
