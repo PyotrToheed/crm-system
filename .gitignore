@@ -40,7 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+/src/generated
+/prisma/dev.db
+/prisma/dev.db-journal
+*.db
+*.db-journal
 
 # Temporary debug scripts and logs
 auth-log.txt
