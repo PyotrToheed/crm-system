@@ -5,8 +5,17 @@ import { hash } from "bcryptjs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+    const dbUrl = process.env.DATABASE_URL || "";
+    // Mask password for logging
+    const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ":****@");
+
+    console.log("🌱 Starting remote seeding diagnonstics...");
+    console.log("📡 Using DATABASE_URL:", maskedUrl);
+
     try {
-        console.log("🌱 Starting remote seeding...");
+        // Test connection
+        await prisma.$queryRaw`SELECT 1`;
+        console.log("✅ Database connection successful!");
 
         const password = await hash("admin123", 12);
         const employeePassword = await hash("emp123", 12);
@@ -34,10 +43,9 @@ export async function GET() {
             },
         });
 
-        // Check if customers already exist to avoid duplicates if re-visited
+        // 2. Create sample data
         const customerCount = await prisma.customer.count();
         if (customerCount === 0) {
-            // 2. Create Customers
             const customer1 = await prisma.customer.create({
                 data: {
                     name: "Ahmed Mohammed",
@@ -49,7 +57,6 @@ export async function GET() {
                 }
             });
 
-            // 3. Create Leads
             await prisma.lead.create({
                 data: {
                     name: "John Doe",
@@ -60,28 +67,28 @@ export async function GET() {
                     userId: admin.id,
                 }
             });
-
-            // 4. Create Activities
-            await prisma.activity.create({
-                data: {
-                    type: "CALL",
-                    content: "Introduction call with Ahmed",
-                    customerId: customer1.id,
-                    userId: admin.id,
-                }
-            });
         }
 
         return NextResponse.json({
+            status: "success",
             message: "Database seeded successfully!",
-            admin: "admin@example.com / admin123",
-            employee: "employee@example.com / emp123"
+            diagnostics: {
+                dbUrlSpecified: !!dbUrl,
+                maskedUrl: maskedUrl,
+            }
         });
     } catch (error: any) {
-        console.error("Setup error:", error);
+        console.error("❌ Setup error:", error);
         return NextResponse.json({
+            status: "error",
             error: "Failed to seed database",
-            details: error.message
+            message: error.message,
+            code: error.code,
+            diagnostics: {
+                dbUrlSpecified: !!dbUrl,
+                maskedUrl: maskedUrl,
+                help: "Check if DATABASE_URL is correct in Vercel settings and ensures IPv4 compatibility is enabled if not using pooler."
+            }
         }, { status: 500 });
     }
 }
