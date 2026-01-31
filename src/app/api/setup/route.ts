@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 async function checkPort(host: string, port: number, timeout = 3000): Promise<{ open: boolean; error?: string }> {
     return new Promise((resolve) => {
         const socket = new net.Socket();
-
         socket.setTimeout(timeout);
 
         socket.on("connect", () => {
@@ -32,38 +31,51 @@ async function checkPort(host: string, port: number, timeout = 3000): Promise<{ 
 }
 
 export async function GET() {
-    const defaultUrl = process.env.DATABASE_URL || "";
-    const mask = (url: string) => url.replace(/:([^:@]+)@/, ":****@");
+    // CRITICAL: .trim() the URL in case the user pasted a space in Vercel settings
+    const rawUrl = process.env.DATABASE_URL || "";
+    const cleanUrl = rawUrl.trim();
+
+    const mask = (url: string) => url.replace(/:([^:@]+)@/, ":****@").trim();
 
     console.log("🔍 Starting Deep Network Diagnostics...");
 
+    // Extract host from cleanUrl
+    let extractedHost = "";
+    let extractedPort = 5432;
+    try {
+        const urlMatch = cleanUrl.match(/@([^:\/?# ]+):?(\d+)?/);
+        if (urlMatch) {
+            extractedHost = urlMatch[1];
+            extractedPort = urlMatch[2] ? parseInt(urlMatch[2]) : 5432;
+        }
+    } catch (e) { }
+
     const networkTests: any[] = [
-        { name: "Supabase Pooled (6543)", host: "aws-1-ap-southeast-1.pooler.supabase.co", port: 6543 },
-        { name: "Supabase Direct (5432)", host: "db.xtmpjzhkqfprertebfjp.supabase.co", port: 5432 },
+        { name: "Current Settings Host", host: extractedHost, port: extractedPort },
+        { name: "Direct Link Test", host: "db.xtmpjzhkqfprertebfjp.supabase.co", port: 5432 },
+        { name: "Pooled Link Test", host: "aws-1-ap-southeast-1.pooler.supabase.co", port: 6543 },
     ];
 
     const networkResults = await Promise.all(
         networkTests.map(async (test) => {
+            if (!test.host) return { ...test, open: false, error: "No host provided" };
             const result = await checkPort(test.host, test.port);
             return { ...test, ...result };
         })
     );
 
-    const results: any[] = [];
     let successClient: PrismaClient | null = null;
+    let strategyLog = "";
 
-    // Only try Prisma if at least one port is open
-    if (networkResults.some(r => r.open)) {
-        try {
-            console.log("Attempting Prisma with Environment Variable...");
-            const client = new PrismaClient({ datasources: { db: { url: defaultUrl } } });
-            await client.$connect();
-            await client.$queryRaw`SELECT 1`;
-            successClient = client;
-            results.push({ strategy: "Environment Variable", status: "success" });
-        } catch (e: any) {
-            results.push({ strategy: "Environment Variable", status: "failed", error: e.message });
-        }
+    try {
+        console.log("Attempting Prisma with Clean URL...");
+        const client = new PrismaClient({ datasources: { db: { url: cleanUrl } } });
+        await client.$connect();
+        await client.$queryRaw`SELECT 1`;
+        successClient = client;
+        strategyLog = "Connection Successful";
+    } catch (e: any) {
+        strategyLog = `Failed: ${e.message}`;
     }
 
     if (successClient) {
@@ -86,16 +98,19 @@ export async function GET() {
             return NextResponse.json({
                 status: "success",
                 message: "Database reachable and seeded!",
-                networkResults,
-                results
+                diagnostics: {
+                    urlCleaned: rawUrl !== cleanUrl,
+                    maskedUrl: mask(cleanUrl),
+                    strategyLog
+                },
+                networkResults
             });
         } catch (error: any) {
             return NextResponse.json({
                 status: "partial_success",
                 message: "Connected, but seeding failed.",
                 error: error.message,
-                networkResults,
-                results
+                networkResults
             });
         } finally {
             await successClient.$disconnect();
@@ -105,10 +120,13 @@ export async function GET() {
     return NextResponse.json({
         status: "error",
         message: "No database connection could be established.",
+        diagnostics: {
+            urlCleaned: rawUrl !== cleanUrl,
+            maskedUrl: mask(cleanUrl),
+            strategyLog,
+            envVarDefined: !!process.env.DATABASE_URL
+        },
         networkResults,
-        results,
-        recommendation: networkResults.every(r => !r.open)
-            ? "Vercel cannot reach Supabase. Check if the project is 'Paused' or if 'IPv4 compatibility' is enabled in Supabase Settings > Database."
-            : "Network ports are OPEN, but Prisma failed to authenticate. Check if the password in Vercel settings is 100% correct."
+        recommendation: "If networkResults show ENOTFOUND, verify there are NO SPACES in your Vercel Environment Variables. Also, check if your Supabase project is 'Paused' in the Supabase Dashboard."
     }, { status: 500 });
 }
