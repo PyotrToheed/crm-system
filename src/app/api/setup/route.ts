@@ -11,7 +11,6 @@ async function resolveHost(host: string): Promise<string[]> {
     return new Promise((resolve) => {
         dns.resolve4(host, (err, addresses) => {
             if (err) {
-                // Fallback to lookup
                 dns.lookup(host, { family: 4 }, (err2, address) => {
                     resolve(address ? [address] : []);
                 });
@@ -22,7 +21,7 @@ async function resolveHost(host: string): Promise<string[]> {
     });
 }
 
-async function checkPort(ip: string, port: number, timeout = 5000): Promise<{ open: boolean; error?: string }> {
+async function checkPort(ip: string, port: number, timeout = 3000): Promise<{ open: boolean; error?: string }> {
     return new Promise((resolve) => {
         const socket = new net.Socket();
         socket.setTimeout(timeout);
@@ -47,69 +46,71 @@ async function checkPort(ip: string, port: number, timeout = 5000): Promise<{ op
 }
 
 export async function GET() {
-    const rawUrl = (process.env.DATABASE_URL || "").trim();
-    const mask = (url: string) => url.replace(/:([^:@]+)@/, ":****@");
+    const projectRef = "xtmpjzhkqfprertebfjp";
+    const region = "ap-southeast-1";
+    const password = "pEWYHxWZIE0m139y";
 
-    const diagnosticLogs: string[] = [];
-    diagnosticLogs.push(`Starting Hospital Check at ${new Date().toISOString()}`);
-
-    const hostsToTest = [
-        "aws-1-ap-southeast-1.pooler.supabase.co",
-        "db.xtmpjzhkqfprertebfjp.supabase.co",
-        "google.com"
+    const hostVariations = [
+        `aws-0-${region}.pooler.supabase.co`,
+        `aws-0-${region}.pooler.supabase.com`,
+        `aws-1-${region}.pooler.supabase.co`,
+        `aws-1-${region}.pooler.supabase.com`,
+        `db.${projectRef}.supabase.co`,
+        `db.${projectRef}.supabase.com`,
+        `${projectRef}.supabase.co`,
+        `${projectRef}.supabase.com`
     ];
 
-    const hostReports: any[] = [];
+    const ports = [5432, 6543];
+    const bruteForceResults: any[] = [];
 
-    for (const host of hostsToTest) {
+    for (const host of hostVariations) {
         const ips = await resolveHost(host);
-        const portToTest = host.includes("pooler") ? 6543 : (host.includes("google") ? 80 : 5432);
+        const hostResult: any = { host, ips: ips.length, checks: [] };
 
-        const results = [];
         for (const ip of ips) {
-            const portCheck = await checkPort(ip, portToTest);
-            results.push({ ip, port: portToTest, ...portCheck });
+            for (const port of ports) {
+                const check = await checkPort(ip, port);
+                hostResult.checks.push({ ip, port, ...check });
+            }
         }
-
-        hostReports.push({ host, ips, results });
+        bruteForceResults.push(hostResult);
     }
 
-    let prismaSuccess = false;
-    let prismaError = "";
+    // Try to find ANY successful combination
+    let recoveryUrl = "";
+    const winner = bruteForceResults.find(r => r.checks.some((c: any) => c.open));
+    if (winner) {
+        const winningCheck = winner.checks.find((c: any) => c.open);
+        const protocol = "postgresql";
+        const user = winner.host.includes("pooler") ? `postgres.${projectRef}` : "postgres";
+        const pgbouncer = winningCheck.port === 6543 ? "?pgbouncer=true" : "";
+        recoveryUrl = `${protocol}://${user}:${password}@${winner.host}:${winningCheck.port}/postgres${pgbouncer}`;
+    }
 
-    try {
-        const prisma = new PrismaClient({ datasources: { db: { url: rawUrl } } });
-        await prisma.$connect();
-        await prisma.$queryRaw`SELECT 1`;
-
-        // Seed
-        const password = await hash("admin123", 12);
-        await prisma.user.upsert({
-            where: { email: "admin@example.com" },
-            update: { password },
-            create: {
-                email: "admin@example.com",
-                name: "Admin User",
-                password,
-                role: "ADMIN",
-            },
-        });
-
-        prismaSuccess = true;
-        await prisma.$disconnect();
-    } catch (e: any) {
-        prismaError = e.message;
+    let prismaRes = "Not attempted";
+    if (recoveryUrl) {
+        try {
+            const prisma = new PrismaClient({ datasources: { db: { url: recoveryUrl } } });
+            await prisma.$connect();
+            const pwHash = await hash("admin123", 12);
+            await prisma.user.upsert({
+                where: { email: "admin@example.com" },
+                update: { password: pwHash },
+                create: { email: "admin@example.com", name: "Admin User", password: pwHash, role: "ADMIN" },
+            });
+            prismaRes = "SUCCESS! Database Recovered.";
+            await prisma.$disconnect();
+        } catch (e: any) {
+            prismaRes = `Failed with Winning URL: ${e.message}`;
+        }
     }
 
     return NextResponse.json({
-        status: prismaSuccess ? "success" : "error",
-        message: prismaSuccess ? "DATABASE RECOVERED! Login now." : "Connection still failing.",
-        recommendation: "If pooler IPs are found but port is closed, check Supabase 'IPv4 Compatibility'. If no IPs found, check Vercel DNS settings.",
-        diagnostics: {
-            urlSpecified: !!rawUrl,
-            maskedUrl: mask(rawUrl),
-            prismaError
-        },
-        hostReports
+        status: prismaRes.includes("SUCCESS") ? "success" : "error",
+        prismaRes,
+        recoveryUrl: recoveryUrl ? recoveryUrl.replace(/:[^:@]+@/, ":****@") : "None found",
+        bruteForceResults,
+        help: "If everything says ips: 0, the project might be PAUSED in Supabase. Otherwise, please check if port 5432 or 6543 is OPEN in any result."
     });
 }
