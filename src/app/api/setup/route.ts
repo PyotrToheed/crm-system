@@ -1,116 +1,114 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
+import net from "net";
 
 export const dynamic = "force-dynamic";
 
+// Helper to test if a port is open
+async function checkPort(host: string, port: number, timeout = 3000): Promise<{ open: boolean; error?: string }> {
+    return new Promise((resolve) => {
+        const socket = new net.Socket();
+
+        socket.setTimeout(timeout);
+
+        socket.on("connect", () => {
+            socket.destroy();
+            resolve({ open: true });
+        });
+
+        socket.on("timeout", () => {
+            socket.destroy();
+            resolve({ open: false, error: "Timeout" });
+        });
+
+        socket.on("error", (err) => {
+            socket.destroy();
+            resolve({ open: false, error: err.message });
+        });
+
+        socket.connect(port, host);
+    });
+}
+
 export async function GET() {
     const defaultUrl = process.env.DATABASE_URL || "";
-    // Mask password
     const mask = (url: string) => url.replace(/:([^:@]+)@/, ":****@");
 
-    console.log("🚀 Starting ultimate database setup rescue...");
+    console.log("🔍 Starting Deep Network Diagnostics...");
+
+    const networkTests: any[] = [
+        { name: "Supabase Pooled (6543)", host: "aws-1-ap-southeast-1.pooler.supabase.co", port: 6543 },
+        { name: "Supabase Direct (5432)", host: "db.xtmpjzhkqfprertebfjp.supabase.co", port: 5432 },
+    ];
+
+    const networkResults = await Promise.all(
+        networkTests.map(async (test) => {
+            const result = await checkPort(test.host, test.port);
+            return { ...test, ...result };
+        })
+    );
 
     const results: any[] = [];
     let successClient: PrismaClient | null = null;
 
-    // Strategy 1: Use the Environment Variable (Current setting)
-    try {
-        console.log("Attempting Strategy 1: Default Environment Variable...");
-        const client = new PrismaClient({ datasources: { db: { url: defaultUrl } } });
-        await client.$connect();
-        await client.$queryRaw`SELECT 1`;
-        successClient = client;
-        results.push({ strategy: "Environment Variable", status: "success", url: mask(defaultUrl) });
-    } catch (e: any) {
-        results.push({ strategy: "Environment Variable", status: "failed", error: e.message, code: e.code });
-        console.error("Strategy 1 failed:", e.message);
-    }
-
-    // Strategy 2: Direct Fallback (Port 5432) if the pooler is failing
-    if (!successClient) {
+    // Only try Prisma if at least one port is open
+    if (networkResults.some(r => r.open)) {
         try {
-            // Reconstruct direct URL from pooled URL pieces if possible, 
-            // otherwise try the direct host manually.
-            const directUrl = defaultUrl
-                .replace("aws-1-ap-southeast-1.pooler.supabase.co:6543", "db.xtmpjzhkqfprertebfjp.supabase.co:5432")
-                .replace("postgres.xtmpjzhkqfprertebfjp", "postgres")
-                .split("?")[0]; // Remove ?pgbouncer=true
-
-            console.log("Attempting Strategy 2: Direct Connection Fallback...");
-            const client = new PrismaClient({ datasources: { db: { url: directUrl } } });
+            console.log("Attempting Prisma with Environment Variable...");
+            const client = new PrismaClient({ datasources: { db: { url: defaultUrl } } });
             await client.$connect();
             await client.$queryRaw`SELECT 1`;
             successClient = client;
-            results.push({ strategy: "Direct Fallback", status: "success", url: mask(directUrl) });
+            results.push({ strategy: "Environment Variable", status: "success" });
         } catch (e: any) {
-            results.push({ strategy: "Direct Fallback", status: "failed", error: e.message });
+            results.push({ strategy: "Environment Variable", status: "failed", error: e.message });
         }
     }
 
-    if (!successClient) {
-        return NextResponse.json({
-            status: "error",
-            message: "All database connection strategies failed.",
-            results,
-            troubleshooting: "Please verify that the password pEWYHxWZIE0m139y is correct on Supabase and that IPv4 is enabled."
-        }, { status: 500 });
-    }
+    if (successClient) {
+        try {
+            const prisma = successClient;
+            const password = await hash("admin123", 12);
+            const employeePassword = await hash("emp123", 12);
 
-    try {
-        const prisma = successClient;
-        const password = await hash("admin123", 12);
-        const employeePassword = await hash("emp123", 12);
-
-        // Seed Users
-        const admin = await prisma.user.upsert({
-            where: { email: "admin@example.com" },
-            update: { password },
-            create: {
-                email: "admin@example.com",
-                name: "Admin User",
-                password,
-                role: "ADMIN",
-            },
-        });
-
-        const employee = await prisma.user.upsert({
-            where: { email: "employee@example.com" },
-            update: { password: employeePassword },
-            create: {
-                email: "employee@example.com",
-                name: "Employee User",
-                password: employeePassword,
-                role: "EMPLOYEE",
-            },
-        });
-
-        // Seed some sample customers if empty
-        const count = await prisma.customer.count();
-        if (count === 0) {
-            await prisma.customer.create({
-                data: {
-                    name: "Ali Al-Ahmed",
-                    company: "Example Law Firm",
-                    userId: admin.id,
-                }
+            await prisma.user.upsert({
+                where: { email: "admin@example.com" },
+                update: { password },
+                create: {
+                    email: "admin@example.com",
+                    name: "Admin User",
+                    password,
+                    role: "ADMIN",
+                },
             });
-        }
 
-        return NextResponse.json({
-            status: "success",
-            message: "Connection recovered and database seeded!",
-            strategyUsed: results.find(r => r.status === "success")?.strategy,
-            results
-        });
-    } catch (error: any) {
-        return NextResponse.json({
-            status: "partial_success",
-            message: "Connection worked, but seeding failed.",
-            error: error.message,
-            results
-        }, { status: 500 });
-    } finally {
-        if (successClient) await successClient.$disconnect();
+            return NextResponse.json({
+                status: "success",
+                message: "Database reachable and seeded!",
+                networkResults,
+                results
+            });
+        } catch (error: any) {
+            return NextResponse.json({
+                status: "partial_success",
+                message: "Connected, but seeding failed.",
+                error: error.message,
+                networkResults,
+                results
+            });
+        } finally {
+            await successClient.$disconnect();
+        }
     }
+
+    return NextResponse.json({
+        status: "error",
+        message: "No database connection could be established.",
+        networkResults,
+        results,
+        recommendation: networkResults.every(r => !r.open)
+            ? "Vercel cannot reach Supabase. Check if the project is 'Paused' or if 'IPv4 compatibility' is enabled in Supabase Settings > Database."
+            : "Network ports are OPEN, but Prisma failed to authenticate. Check if the password in Vercel settings is 100% correct."
+    }, { status: 500 });
 }
