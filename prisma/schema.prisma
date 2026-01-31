@@ -1,0 +1,170 @@
+generator client {
+  provider      = "prisma-client-js"
+  engineType    = "binary"
+  binaryTargets = ["native", "windows"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  password       String
+  role           Role            @default(EMPLOYEE)
+  customers      Customer[]
+  leads          Lead[]
+  activities     Activity[]
+  tickets        Ticket[]
+  ticketMessages TicketMessage[]
+  notifications  Notification[]
+  attachments    Attachment[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Customer {
+  id          String       @id @default(cuid())
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  company     String?
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  activities  Activity[]
+  tickets     Ticket[]
+  attachments Attachment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Lead {
+  id          String       @id @default(cuid())
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  company     String?
+  status      LeadStatus   @default(NEW)
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  activities  Activity[]
+  attachments Attachment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Activity {
+  id           String       @id @default(cuid())
+  type         ActivityType
+  content      String
+  customerId   String?
+  customer     Customer?    @relation(fields: [customerId], references: [id])
+  leadId       String?
+  lead         Lead?        @relation(fields: [leadId], references: [id])
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  reminderDate DateTime?
+  attachments  Attachment[]
+  createdAt    DateTime     @default(now())
+}
+
+model Ticket {
+  id          String         @id @default(cuid())
+  customerId  String
+  customer    Customer       @relation(fields: [customerId], references: [id])
+  title       String
+  description String
+  type        String?
+  priority    TicketPriority @default(MEDIUM)
+  status      TicketStatus   @default(OPEN)
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  messages    TicketMessage[]
+  attachments Attachment[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum LeadStatus {
+  NEW
+  UNDER_FOLLOWUP
+  INTERESTED
+  CONVERTED
+}
+
+enum ActivityType {
+  WHATSAPP
+  EMAIL
+  CALL
+  NOTE
+  TASK
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  title     String
+  content   String
+  type      NotificationType @default(INFO)
+  read      Boolean          @default(false)
+  relatedId String?
+  createdAt DateTime         @default(now())
+}
+
+enum NotificationType {
+  INFO
+  REMINDER
+  URGENT
+}
+
+model Attachment {
+  id         String    @id @default(cuid())
+  name       String
+  url        String
+  type       String
+  size       Int
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  leadId     String?
+  lead       Lead?     @relation(fields: [leadId], references: [id])
+  activityId String?
+  activity   Activity? @relation(fields: [activityId], references: [id])
+  ticketId   String?
+  ticket     Ticket?   @relation(fields: [ticketId], references: [id])
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+}

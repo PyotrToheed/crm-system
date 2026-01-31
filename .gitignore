@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# Temporary debug scripts and logs
+auth-log.txt
+auth-results.json
+auth-error.txt
+check-users.ts
+compare-dbs.ts
+verify-auth-json.ts
+verify-auth.ts
+db-comparison.txt
+logo-b64.txt
+logo-base64.txt
+logo-albaker-b64.txt
+logo-albaker-base64.txt
+*.db
+*.db-journal

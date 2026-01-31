@@ -1,0 +1,398 @@
+{
+    "en": {
+        "nav": {
+            "dashboard": "Dashboard",
+            "customers": "Customers",
+            "leads": "Leads",
+            "activities": "Activities",
+            "tickets": "Tickets",
+            "reports": "Reports",
+            "users": "User Management",
+            "logout": "Sign Out",
+            "main_menu": "Main Menu",
+            "admin": "Administration",
+            "search": "Global Search"
+        },
+        "dashboard": {
+            "title": "Dashboard",
+            "welcome": "Welcome back",
+            "customers": "Customers",
+            "customers_total": "Total registered customers",
+            "leads": "Leads",
+            "leads_active": "Leads currently being followed",
+            "tickets": "Open Tickets",
+            "tickets_desc": "Support tickets awaiting response",
+            "welcome_msg": "Welcome to the CRM System",
+            "setup_msg": "The infrastructure and core modules are ready. You can start by adding customers and leads from the sidebar.",
+            "activities_desc": "Log of activities and interactions with customers",
+            "tickets_desc_page": "Manage support tickets and requests",
+            "reports_desc": "General reports and statistics",
+            "users_desc": "Manage system users and permissions",
+            "coming_soon": "Coming Soon",
+            "under_development": "Under Development",
+            "phase_3_msg": "In Phase 3, you will be able to log calls, messages, and appointments.",
+            "phase_4_msg": "The support ticket system will be launched in Phase 4."
+        },
+        "login": {
+            "title": "Sign In",
+            "welcome": "Welcome back to the CRM System",
+            "email": "Email Address",
+            "password": "Password",
+            "button": "Sign In",
+            "loading": "Signing in...",
+            "error_invalid": "Invalid login credentials",
+            "error_generic": "An error occurred during sign in",
+            "footer": "CRM System"
+        },
+        "customers": {
+            "title": "Customers",
+            "add": "Add Customer",
+            "search": "Search by name, email or phone...",
+            "name": "Name",
+            "phone": "Phone",
+            "company": "Company",
+            "date": "Date Added",
+            "actions": "Actions",
+            "no_records": "No customer records found yet",
+            "details": "Customer Details",
+            "view": "View Details",
+            "edit": "Edit",
+            "delete": "Delete",
+            "edit_title": "Edit Customer Details",
+            "add_title": "Add New Customer",
+            "save": "Save Changes",
+            "create": "Create Customer",
+            "basic_info": "Basic Information",
+            "interaction_history": "Interaction History",
+            "interactions_placeholder": "Activities will be added here",
+            "interactions_desc": "In the next phase, you'll be able to log calls, messages, and appointments."
+        },
+        "leads": {
+            "title": "Leads",
+            "add": "Add Lead",
+            "status": "Status",
+            "convert": "Convert to Customer",
+            "converting": "Converting...",
+            "no_records": "No lead records found yet",
+            "details": "Lead Details",
+            "contact_info": "Contact Information",
+            "follow_up_history": "Follow-up History",
+            "follow_up_placeholder": "Follow-up activities will be added here",
+            "follow_up_desc": "Logging calls and messages for this lead will be enabled in the next phase.",
+            "convert_confirm": "Are you sure you want to convert \"{name}\" to a customer?",
+            "delete_confirm": "Are you sure you want to delete this lead?",
+            "statuses": {
+                "NEW": "New",
+                "UNDER_FOLLOWUP": "Under Follow-up",
+                "INTERESTED": "Interested",
+                "CONVERTED": "Converted"
+            }
+        },
+        "activities": {
+            "title": "Activities",
+            "add": "Add Activity",
+            "type": "Type",
+            "content": "Description",
+            "reminder": "Reminder Date",
+            "related_to": "Related To",
+            "history": "Interaction History",
+            "types": {
+                "WHATSAPP": "WhatsApp",
+                "EMAIL": "Email",
+                "CALL": "Call",
+                "NOTE": "Note",
+                "TASK": "Task"
+            },
+            "no_activities": "No activities logged yet"
+        },
+        "tickets": {
+            "title": "Tickets",
+            "add": "Add Ticket",
+            "subject": "Subject",
+            "priority": "Priority",
+            "status": "Status",
+            "messages": "Messages",
+            "add_message": "Add Message",
+            "send": "Send",
+            "priorities": {
+                "LOW": "Low",
+                "MEDIUM": "Medium",
+                "HIGH": "High"
+            },
+            "statuses": {
+                "OPEN": "Open",
+                "IN_PROGRESS": "In Progress",
+                "CLOSED": "Closed"
+            },
+            "no_tickets": "No tickets found"
+        },
+        "reports": {
+            "title": "Reports & Analytics",
+            "desc": "Performance overview and business intelligence",
+            "total_customers": "Total Customers",
+            "total_leads": "Total Leads",
+            "conversion_rate": "Conversion Rate",
+            "employee_performance": "Employee Performance",
+            "handling": "Activities & Tickets Handled",
+            "export_excel": "Export Excel",
+            "export_pdf": "Export PDF",
+            "leads_converted": "Leads Converted",
+            "activity_count": "Activities",
+            "ticket_count": "Tickets",
+            "user_name": "User Name"
+        },
+        "users_admin": {
+            "title": "User Management",
+            "desc": "Add and manage system users and roles",
+            "add": "Add User",
+            "edit": "Edit User",
+            "name": "Full Name",
+            "email": "Email Address",
+            "role": "Role",
+            "role_admin": "Admin",
+            "role_employee": "Employee",
+            "password": "Password",
+            "password_hint": "Leave blank to keep current password",
+            "delete_confirm": "Are you sure you want to delete this user?"
+        },
+        "search": {
+            "title": "Global Search",
+            "placeholder": "Search anything (customers, leads, activities, tickets)...",
+            "results": "Search Results for",
+            "no_results": "No results found",
+            "sections": {
+                "customers": "Customers",
+                "leads": "Leads",
+                "activities": "Activities",
+                "tickets": "Tickets"
+            }
+        },
+        "notifications": {
+            "title": "Notifications",
+            "mark_all_read": "Mark all as read",
+            "no_notifications": "No notifications",
+            "view_all": "View all",
+            "types": {
+                "INFO": "Information",
+                "REMINDER": "Reminder",
+                "URGENT": "Urgent"
+            }
+        },
+        "attachments": {
+            "title": "Attachments",
+            "upload": "Upload File",
+            "no_files": "No attachments found",
+            "delete_confirm": "Are you sure you want to delete this file?",
+            "file_size": "Size",
+            "file_type": "Type"
+        },
+        "common": {
+            "success_add": "Added successfully",
+            "success_update": "Updated successfully",
+            "success_delete": "Deleted successfully",
+            "error": "Something went wrong, please try again",
+            "back": "Back",
+            "optional": "Optional",
+            "save": "Save",
+            "cancel": "Cancel"
+        }
+    },
+    "ar": {
+        "nav": {
+            "dashboard": "لوحة التحكم",
+            "customers": "العملاء",
+            "leads": "الليدز",
+            "activities": "الأنشطة",
+            "tickets": "التذاكر",
+            "reports": "التقارير",
+            "users": "إدارة المستخدمين",
+            "logout": "تسجيل الخروج",
+            "main_menu": "القائمة الرئيسية",
+            "admin": "الإدارة",
+            "search": "البحث العام"
+        },
+        "dashboard": {
+            "title": "لوحة التحكم",
+            "welcome": "مرحباً بك",
+            "customers": "العملاء",
+            "customers_total": "إجمالي العملاء المسجلين",
+            "leads": "الليدز (Leads)",
+            "leads_active": "ليدز قيد المتابعة حالياً",
+            "tickets": "التذاكر المفتوحة",
+            "tickets_desc": "تذاكر دعم فني بانتظار الرد",
+            "welcome_msg": "مرحباً بك في نظام إدارة العملاء",
+            "setup_msg": "تم إعداد البنية التحتية والموديلات الأساسية. يمكنك البدء بإضافة العملاء والليدز من القائمة الجانبية.",
+            "activities_desc": "سجل الأنشطة والتفاعلات مع العملاء",
+            "tickets_desc_page": "إدارة تذاكر الدعم الفني والطلبات",
+            "reports_desc": "التقارير والإحصائيات العامة",
+            "users_desc": "إدارة مستخدمي النظام والصلاحيات",
+            "coming_soon": "سيتم تفعيل هذا القسم قريباً",
+            "under_development": "هذا القسم قيد التطوير",
+            "phase_3_msg": "في المرحلة الثالثة، ستتمكن من تسجيل المكالمات، الرسائل، والمواعيد.",
+            "phase_4_msg": "سيتم إطلاق نظام الدعم الفني في المرحلة الرابعة."
+        },
+        "login": {
+            "title": "تسجيل الدخول",
+            "welcome": "مرحباً بك مجدداً في نظام إدارة العملاء",
+            "email": "البريد الإلكتروني",
+            "password": "كلمة المرور",
+            "button": "تسجيل الدخول",
+            "loading": "جاري التحميل...",
+            "error_invalid": "بيانات الدخول غير صحيحة",
+            "error_generic": "حدث خطأ أثناء تسجيل الدخول",
+            "footer": "نظام إدارة العملاء"
+        },
+        "customers": {
+            "title": "العملاء",
+            "add": "إضافة عميل",
+            "search": "بحث بالاسم، البريد أو الهاتف...",
+            "name": "الاسم",
+            "phone": "الهاتف",
+            "company": "الشركة",
+            "date": "تاريخ الإضافة",
+            "actions": "الإجراءات",
+            "no_records": "لا توجد سجلات للعملاء حالياً",
+            "details": "تفاصيل العميل",
+            "view": "عرض التفاصيل",
+            "edit": "تعديل",
+            "delete": "حذف",
+            "edit_title": "تعديل بيانات العميل",
+            "add_title": "إضافة عميل جديد",
+            "save": "حفظ التغييرات",
+            "create": "إضافة عميل",
+            "basic_info": "المعلومات الأساسية",
+            "interaction_history": "سجل التفاعلات",
+            "interactions_placeholder": "سيتم إضافة الأنشطة هنا",
+            "interactions_desc": "في المرحلة القادمة، ستتمكن من تسجيل المكالمات، الرسائل، والمواعيد لكل عميل."
+        },
+        "leads": {
+            "title": "الليدز",
+            "add": "إضافة ليد",
+            "status": "الحالة",
+            "convert": "تحويل لعميل",
+            "converting": "جاري التحويل...",
+            "no_records": "لا توجد سجلات لليدز حالياً",
+            "details": "تفاصيل الليد",
+            "contact_info": "معلومات التواصل",
+            "follow_up_history": "سجل المتابعة",
+            "follow_up_placeholder": "سيتم إضافة الأنشطة هنا",
+            "follow_up_desc": "متابعة المكالمات والرسائل الخاصة بهذا الليد سيتم تفعيلها في المرحلة القادمة.",
+            "convert_confirm": "هل أنت متأكد من تحويل \"{name}\" إلى عميل؟",
+            "delete_confirm": "هل أنت متأكد من حذف هذا الليد؟",
+            "statuses": {
+                "NEW": "جديد",
+                "UNDER_FOLLOWUP": "تحت المتابعة",
+                "INTERESTED": "مهتم",
+                "CONVERTED": "محول"
+            }
+        },
+        "activities": {
+            "title": "الأنشطة",
+            "add": "إضافة نشاط",
+            "type": "النوع",
+            "content": "الوصف",
+            "reminder": "تاريخ التذكير",
+            "related_to": "مرتبط بـ",
+            "history": "سجل التفاعلات",
+            "types": {
+                "WHATSAPP": "واتساب",
+                "EMAIL": "بريد إلكتروني",
+                "CALL": "مكالمة",
+                "NOTE": "ملاحظة",
+                "TASK": "مهمة"
+            },
+            "no_activities": "لا يوجد أنشطة مسجلة بعد"
+        },
+        "tickets": {
+            "title": "التذاكر",
+            "add": "إضافة تذكرة",
+            "subject": "الموضوع",
+            "priority": "الأولوية",
+            "status": "الحالة",
+            "messages": "الرسائل",
+            "add_message": "إضافة رسالة",
+            "send": "إرسال",
+            "priorities": {
+                "LOW": "منخفضة",
+                "MEDIUM": "متوسطة",
+                "HIGH": "عالية"
+            },
+            "statuses": {
+                "OPEN": "مفتوحة",
+                "IN_PROGRESS": "قيد التقدم",
+                "CLOSED": "مغلقة"
+            },
+            "no_tickets": "لا يوجد تذاكر"
+        },
+        "reports": {
+            "title": "التقارير والتحليلات",
+            "desc": "نظرة عامة على الأداء وإحصائيات العمل",
+            "total_customers": "إجمالي العملاء",
+            "total_leads": "إجمالي الليدز",
+            "conversion_rate": "معدل التحويل",
+            "employee_performance": "أداء الموظفين",
+            "handling": "الأنشطة والتذاكر المعالجة",
+            "export_excel": "تصدير Excel",
+            "export_pdf": "تصدير PDF",
+            "leads_converted": "الليدز المحولة",
+            "activity_count": "الأنشطة",
+            "ticket_count": "التذاكر",
+            "user_name": "اسم المستخدم"
+        },
+        "users_admin": {
+            "title": "إدارة المستخدمين",
+            "desc": "إضافة وإدارة مستخدمي النظام والصلاحيات",
+            "add": "إضافة مستخدم",
+            "edit": "تعديل مستخدم",
+            "name": "الاسم الكامل",
+            "email": "البريد الإلكتروني",
+            "role": "الدور",
+            "role_admin": "مدير (Admin)",
+            "role_employee": "موظف (Employee)",
+            "password": "كلمة المرور",
+            "password_hint": "اتركه فارغاً للحفاظ على كلمة المرور الحالية",
+            "delete_confirm": "هل أنت متأكد من حذف هذا المستخدم؟"
+        },
+        "search": {
+            "title": "البحث العام",
+            "placeholder": "ابحث عن أي شيء (عملاء، ليدز، أنشطة، تذاكر)...",
+            "results": "نتائج البحث عن",
+            "no_results": "لا توجد نتائج",
+            "sections": {
+                "customers": "العملاء",
+                "leads": "الليدز",
+                "activities": "الأنشطة",
+                "tickets": "التذاكر"
+            }
+        },
+        "notifications": {
+            "title": "الإشعارات",
+            "mark_all_read": "تحديد الكل كمقروء",
+            "no_notifications": "لا توجد إشعارات",
+            "view_all": "عرض الكل",
+            "types": {
+                "INFO": "معلومات",
+                "REMINDER": "تذكير",
+                "URGENT": "عاجل"
+            }
+        },
+        "attachments": {
+            "title": "المرفقات",
+            "upload": "رفع ملف",
+            "no_files": "لا توجد مرفقات",
+            "delete_confirm": "هل أنت متأكد من حذف هذا الملف؟",
+            "file_size": "الحجم",
+            "file_type": "النوع"
+        },
+        "common": {
+            "success_add": "تمت الإضافة بنجاح",
+            "success_update": "تم التحديث بنجاح",
+            "success_delete": "تم الحذف بنجاح",
+            "error": "حدث خطأ ما، يرجى المحاولة مرة أخرى",
+            "back": "رجوع",
+            "optional": "اختياري",
+            "save": "حفظ",
+            "cancel": "إلغاء"
+        }
+    }
+}
