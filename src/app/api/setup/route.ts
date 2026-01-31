@@ -3,104 +3,113 @@ import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import net from "net";
 import dns from "dns";
-import { promisify } from "util";
 
 export const dynamic = "force-dynamic";
 
-const lookup = promisify(dns.lookup);
-
-async function checkPort(host: string, port: number, timeout = 3000): Promise<{ open: boolean; ip?: string; error?: string }> {
-    try {
-        // Try DNS resolution first
-        const resolve = await lookup(host).catch(e => ({ address: undefined, error: e.message }));
-        const ip = (resolve as any).address;
-
-        if (!ip) return { open: false, error: `DNS Failed: ${(resolve as any).error}` };
-
-        return new Promise((resolvePromise) => {
-            const socket = new net.Socket();
-            socket.setTimeout(timeout);
-
-            socket.on("connect", () => {
-                socket.destroy();
-                resolvePromise({ open: true, ip });
-            });
-
-            socket.on("timeout", () => {
-                socket.destroy();
-                resolvePromise({ open: false, ip, error: "TCP Timeout" });
-            });
-
-            socket.on("error", (err) => {
-                socket.destroy();
-                resolvePromise({ open: false, ip, error: err.message });
-            });
-
-            socket.connect(port, ip); // Connect to IP directly
+// Manual DNS Resolver to bypass Vercel's EBUSY errors
+async function resolveHost(host: string): Promise<string[]> {
+    return new Promise((resolve) => {
+        dns.resolve4(host, (err, addresses) => {
+            if (err) {
+                // Fallback to lookup
+                dns.lookup(host, { family: 4 }, (err2, address) => {
+                    resolve(address ? [address] : []);
+                });
+            } else {
+                resolve(addresses || []);
+            }
         });
-    } catch (e: any) {
-        return { open: false, error: e.message };
-    }
+    });
+}
+
+async function checkPort(ip: string, port: number, timeout = 5000): Promise<{ open: boolean; error?: string }> {
+    return new Promise((resolve) => {
+        const socket = new net.Socket();
+        socket.setTimeout(timeout);
+
+        socket.on("connect", () => {
+            socket.destroy();
+            resolve({ open: true });
+        });
+
+        socket.on("timeout", () => {
+            socket.destroy();
+            resolve({ open: false, error: "TCP Timeout" });
+        });
+
+        socket.on("error", (err) => {
+            socket.destroy();
+            resolve({ open: false, error: err.message });
+        });
+
+        socket.connect(port, ip);
+    });
 }
 
 export async function GET() {
-    const rawUrl = process.env.DATABASE_URL || "";
-    const cleanUrl = rawUrl.trim();
+    const rawUrl = (process.env.DATABASE_URL || "").trim();
+    const mask = (url: string) => url.replace(/:([^:@]+)@/, ":****@");
 
-    console.log("🕵️ Ultimate Connection Investigation...");
+    const diagnosticLogs: string[] = [];
+    diagnosticLogs.push(`Starting Hospital Check at ${new Date().toISOString()}`);
 
-    const networkTests = [
-        { name: "Global DNS (Google)", host: "google.com", port: 80 },
-        { name: "Supabase Pooled", host: "aws-1-ap-southeast-1.pooler.supabase.co", port: 6543 },
-        { name: "Supabase Direct", host: "db.xtmpjzhkqfprertebfjp.supabase.co", port: 5432 },
-        { name: "Supabase Raw Host", host: "xtmpjzhkqfprertebfjp.supabase.co", port: 5432 }
+    const hostsToTest = [
+        "aws-1-ap-southeast-1.pooler.supabase.co",
+        "db.xtmpjzhkqfprertebfjp.supabase.co",
+        "google.com"
     ];
 
-    const networkResults = await Promise.all(
-        networkTests.map(async (test) => {
-            const result = await checkPort(test.host, test.port);
-            return { ...test, ...result };
-        })
-    );
+    const hostReports: any[] = [];
 
-    let prismaResult = "Skipped";
-    let seedResult = "Skipped";
+    for (const host of hostsToTest) {
+        const ips = await resolveHost(host);
+        const portToTest = host.includes("pooler") ? 6543 : (host.includes("google") ? 80 : 5432);
 
-    if (networkResults.some(r => r.open)) {
-        try {
-            const client = new PrismaClient({ datasources: { db: { url: cleanUrl } } });
-            await client.$connect();
-            prismaResult = "Connected!";
-
-            // Seed
-            const password = await hash("admin123", 12);
-            await client.user.upsert({
-                where: { email: "admin@example.com" },
-                update: { password },
-                create: {
-                    email: "admin@example.com",
-                    name: "Admin User",
-                    password,
-                    role: "ADMIN",
-                },
-            });
-            seedResult = "Success!";
-            await client.$disconnect();
-        } catch (e: any) {
-            prismaResult = `Failed: ${e.message}`;
-            seedResult = "Failed";
+        const results = [];
+        for (const ip of ips) {
+            const portCheck = await checkPort(ip, portToTest);
+            results.push({ ip, port: portToTest, ...portCheck });
         }
+
+        hostReports.push({ host, ips, results });
+    }
+
+    let prismaSuccess = false;
+    let prismaError = "";
+
+    try {
+        const prisma = new PrismaClient({ datasources: { db: { url: rawUrl } } });
+        await prisma.$connect();
+        await prisma.$queryRaw`SELECT 1`;
+
+        // Seed
+        const password = await hash("admin123", 12);
+        await prisma.user.upsert({
+            where: { email: "admin@example.com" },
+            update: { password },
+            create: {
+                email: "admin@example.com",
+                name: "Admin User",
+                password,
+                role: "ADMIN",
+            },
+        });
+
+        prismaSuccess = true;
+        await prisma.$disconnect();
+    } catch (e: any) {
+        prismaError = e.message;
     }
 
     return NextResponse.json({
-        status: seedResult === "Success!" ? "success" : "error",
+        status: prismaSuccess ? "success" : "error",
+        message: prismaSuccess ? "DATABASE RECOVERED! Login now." : "Connection still failing.",
+        recommendation: "If pooler IPs are found but port is closed, check Supabase 'IPv4 Compatibility'. If no IPs found, check Vercel DNS settings.",
         diagnostics: {
-            processEnvUrlExists: !!rawUrl,
-            urlWasTrimmed: rawUrl !== cleanUrl,
-            prismaResult,
-            seedResult
+            urlSpecified: !!rawUrl,
+            maskedUrl: mask(rawUrl),
+            prismaError
         },
-        networkResults,
-        help: "Check networkResults. If google.com is closed, Vercel outgoing is blocked. If only Supabase is closed, check Supabase status."
+        hostReports
     });
 }
