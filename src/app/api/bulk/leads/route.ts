@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, LeadStatus } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
             phone: item.phone || item.Phone || null,
             company: item.company || item.Company || null,
             address: item.address || item.Address || null,
-            status: "NEW",
+            status: "NEW" as LeadStatus,
             userId: (session.user as any).id,
         })).filter((l: any) => l.name !== "Unknown Lead"); // Basic filtering
 
