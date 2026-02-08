@@ -5,23 +5,14 @@ import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/components/providers/i18n-context";
-import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } from "@/lib/actions/notification-actions";
+import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead, type NotificationDisplay } from "@/lib/actions/notification-actions";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 
-interface Notification {
-    id: string;
-    title: string;
-    content: string;
-    type: string;
-    read: boolean;
-    createdAt: Date;
-}
-
 export function NotificationBell() {
     const { t, lang } = useI18n();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [notifications, setNotifications] = useState<NotificationDisplay[]>([]);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
 

@@ -24,13 +24,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "../providers/i18n-context";
 import { createTicket } from "@/lib/actions/ticket-actions";
 import { toast } from "sonner";
-import { TicketPriority } from "@prisma/client";
+
+const TicketPriority = ["LOW", "MEDIUM", "HIGH"] as const;
+type TicketPriority = typeof TicketPriority[number];
 
 const formSchema = z.object({
     title: z.string().min(1, "Required"),
     description: z.string().min(1, "Required"),
     customerId: z.string().min(1, "Required"),
-    priority: z.nativeEnum(TicketPriority),
+    priority: z.enum(TicketPriority as any),
 });
 
 interface TicketFormProps {
@@ -53,7 +55,7 @@ export function TicketForm({ onSuccess, customers = [], initialCustomerId }: Tic
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
-            await createTicket(values);
+            await createTicket(values as any);
             toast.success(t("common.success_add"));
             onSuccess?.();
             form.reset();
@@ -117,7 +119,7 @@ export function TicketForm({ onSuccess, customers = [], initialCustomerId }: Tic
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {Object.values(TicketPriority).map((p) => (
+                                    {TicketPriority.map((p) => (
                                         <SelectItem key={p} value={p}>
                                             {t(`tickets.priorities.${p}`)}
                                         </SelectItem>

@@ -29,7 +29,7 @@ export function LeadsClient({ data, userRole, initialSearch }: LeadsClientProps)
         <div className="p-8 space-y-8">
             <div className="flex justify-between items-center">
                 <div className={dir === "rtl" ? "text-right" : "text-left"}>
-                    <h1 className="text-3xl font-bold font-sans text-primary">{t("leads.title")} (v1.1)</h1>
+                    <h1 className="text-3xl font-bold font-sans text-primary">{t("leads.title")}</h1>
                     <p className="text-muted-foreground mt-2">{t("nav.leads")}</p>
                 </div>
 

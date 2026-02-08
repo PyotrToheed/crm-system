@@ -1,14 +1,11 @@
-import { prisma } from "@/lib/db";
+import { sql } from "@/lib/db-lite";
 import { ActivitiesClient } from "@/components/activities/activities-client";
 import { getActivities } from "@/lib/actions/activity-actions";
 
 export default async function ActivitiesPage() {
     const activities = await getActivities();
-    const customers = await prisma.customer.findMany({ select: { id: true, name: true } });
-    const leads = await prisma.lead.findMany({
-        where: { status: { not: "CONVERTED" } },
-        select: { id: true, name: true }
-    });
+    const customers = await sql`SELECT id, name FROM "Customer"`;
+    const leads = await sql`SELECT id, name FROM "Lead" WHERE ("status" != 'CONVERTED')`;
 
     return (
         <ActivitiesClient

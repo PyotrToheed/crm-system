@@ -28,7 +28,7 @@ export function CustomersClient({ data, userRole, initialSearch }: CustomersClie
         <div className="p-8 space-y-8">
             <div className="flex justify-between items-center">
                 <div className={dir === "rtl" ? "text-right" : "text-left"}>
-                    <h1 className="text-3xl font-bold font-sans text-primary">{t("customers.title")} (v1.1)</h1>
+                    <h1 className="text-3xl font-bold font-sans text-primary">{t("customers.title")}</h1>
                     <p className="text-muted-foreground mt-2">{t("nav.customers")}</p>
                 </div>
 

@@ -11,23 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Pencil, Trash2, Shield, User as UserIcon } from "lucide-react";
-import { createUser, updateUser, deleteUser } from "@/lib/actions/user-actions";
+import { createUser, updateUser, deleteUser, type UserDisplay } from "@/lib/actions/user-actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    createdAt: Date;
-}
-
-export function UsersClient({ users }: { users: User[] }) {
+export function UsersClient({ users }: { users: UserDisplay[] }) {
     const { t } = useI18n();
     const router = useRouter();
     const [isAddOpen, setIsAddOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [editingUser, setEditingUser] = useState<UserDisplay | null>(null);
     const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "EMPLOYEE" });
 
     const handleSubmit = async () => {
@@ -59,7 +51,7 @@ export function UsersClient({ users }: { users: User[] }) {
         }
     };
 
-    const openEdit = (user: User) => {
+    const openEdit = (user: UserDisplay) => {
         setEditingUser(user);
         setFormData({ name: user.name, email: user.email, password: "", role: user.role });
     };

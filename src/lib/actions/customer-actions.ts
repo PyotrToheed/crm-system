@@ -1,52 +1,71 @@
 "use server";
 
-import { prisma } from "@/lib/db";
+import { sql } from "@/lib/db-lite";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export async function getCustomers(search?: string) {
-    return await prisma.customer.findMany({
-        where: search
-            ? {
-                OR: [
-                    { name: { contains: search } },
-                    { email: { contains: search } },
-                    { phone: { contains: search } },
-                    { company: { contains: search } },
-                ],
-            }
-            : undefined,
-        orderBy: { createdAt: "desc" },
-    });
+    if (search) {
+        return await sql`
+            SELECT * FROM "Customer" 
+            WHERE ("name" ILIKE ${'%' + search + '%'} 
+               OR "email" ILIKE ${'%' + search + '%'} 
+               OR "phone" ILIKE ${'%' + search + '%'} 
+               OR "company" ILIKE ${'%' + search + '%'})
+            ORDER BY "createdAt" DESC
+        `;
+    }
+    return await sql`
+        SELECT * FROM "Customer" 
+        ORDER BY "createdAt" DESC
+    `;
 }
 
 export async function getCustomerById(id: string) {
-    if (!prisma.customer) return null;
-    return await prisma.customer.findUnique({
-        where: { id },
-        include: {
-            activities: {
-                include: { user: { select: { name: true } } },
-                orderBy: { createdAt: "desc" },
-            },
-            tickets: {
-                orderBy: { createdAt: "desc" },
-            },
-        },
-    });
+    const [customer] = await sql`SELECT * FROM "Customer" WHERE "id" = ${id}`;
+    if (!customer) return null;
+
+    const activities = await sql`
+        SELECT a.*, u.name as "userName" 
+        FROM "Activity" a
+        JOIN "User" u ON a."userId" = u."id"
+        WHERE a."customerId" = ${id}
+        ORDER BY a."createdAt" DESC
+    `;
+
+    const tickets = await sql`
+        SELECT t.*, c.name as "customerName"
+        FROM "Ticket" t
+        JOIN "Customer" c ON t."customerId" = c.id
+        WHERE t."customerId" = ${id} 
+        ORDER BY t."createdAt" DESC
+    `;
+
+    return {
+        ...customer,
+        activities: activities.map(a => ({
+            ...a,
+            user: { name: (a as any).userName }
+        })),
+        tickets: tickets.map(t => ({
+            ...t,
+            customer: { name: (t as any).customerName }
+        }))
+    };
 }
 
 export async function createCustomer(data: any) {
     const session = await getServerSession(authOptions);
     if (!session) throw new Error("Unauthorized");
 
-    const customer = await prisma.customer.create({
-        data: {
-            ...data,
-            userId: (session.user as any).id,
-        },
-    });
+    const [customer] = await sql`
+        INSERT INTO "Customer" (
+            "id", "name", "email", "phone", "address", "company", "userId", "createdAt", "updatedAt"
+        ) VALUES (
+            ${crypto.randomUUID()}, ${data.name}, ${data.email}, ${data.phone}, ${data.address}, ${data.company}, ${(session.user as any).id}, NOW(), NOW()
+        ) RETURNING *
+    `;
 
     revalidatePath("/dashboard/customers");
     return customer;
@@ -56,10 +75,11 @@ export async function updateCustomer(id: string, data: any) {
     const session = await getServerSession(authOptions);
     if (!session) throw new Error("Unauthorized");
 
-    const customer = await prisma.customer.update({
-        where: { id },
-        data,
-    });
+    const [customer] = await sql`
+        UPDATE "Customer" SET ${sql(data)}, "updatedAt" = NOW()
+        WHERE "id" = ${id}
+        RETURNING *
+    `;
 
     revalidatePath("/dashboard/customers");
     revalidatePath(`/dashboard/customers/${id}`);
@@ -72,9 +92,7 @@ export async function deleteCustomer(id: string) {
         throw new Error("يسمح فقط للمديرين بحذف العملاء");
     }
 
-    await prisma.customer.delete({
-        where: { id },
-    });
+    await sql`DELETE FROM "Customer" WHERE "id" = ${id}`;
 
     revalidatePath("/dashboard/customers");
 }

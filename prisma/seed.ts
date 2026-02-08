@@ -1,171 +1,145 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, LeadStatus, ActivityType, TicketPriority, TicketStatus, NotificationType } from "../src/generated/client";
 import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log("🌱 Starting seeding...");
+    console.log("🌱 Starting professional seeding for AlBaker CRM...");
+
+    // 0. Cleanup existing data to ensure a clean demo environment
+    console.log("🧹 Cleaning up old data...");
+    await prisma.attachment.deleteMany();
+    await prisma.notification.deleteMany();
+    await prisma.ticketMessage.deleteMany();
+    await prisma.ticket.deleteMany();
+    await prisma.activity.deleteMany();
+    await prisma.lead.deleteMany();
+    await prisma.customer.deleteMany();
+    // We keep users (upsert handles them)
 
     const password = await hash("admin123", 12);
     const employeePassword = await hash("emp123", 12);
 
     // 1. Create Users
     const admin = await prisma.user.upsert({
-        where: { email: "admin@example.com" },
+        where: { email: "admin@albaker.qa" },
         update: { password },
         create: {
-            email: "admin@example.com",
-            name: "Admin User",
+            email: "admin@albaker.qa",
+            name: "Chief Administrator",
             password,
             role: "ADMIN",
         },
     });
 
     const employee = await prisma.user.upsert({
-        where: { email: "employee@example.com" },
+        where: { email: "manager@albaker.qa" },
         update: { password: employeePassword },
         create: {
-            email: "employee@example.com",
-            name: "Employee User",
+            email: "manager@albaker.qa",
+            name: "Operations Manager",
             password: employeePassword,
             role: "EMPLOYEE",
         },
     });
 
     // 2. Create Customers
-    const customer1 = await prisma.customer.create({
-        data: {
-            name: "Ahmed Mohammed",
-            email: "ahmed@example.com",
-            phone: "+966501234567",
-            company: "Riyadh Tech",
-            address: "Riyadh, KSA",
-            userId: admin.id,
-        }
-    });
+    const customersData = [
+        { name: "Ahmed Al-Mansouri", email: "ahmed.m@qatar-energy.com", phone: "+974 5501 2345", company: "Qatar Energy", address: "West Bay, Doha, Qatar" },
+        { name: "Khalid Bin Rashid", email: "khalid@doha-bank.qa", phone: "+974 4409 8765", company: "Doha Bank", address: "Grand Hamad St, Doha" },
+        { name: "Sara Al-Thani", email: "sara.th@qf.org.qa", phone: "+974 3322 1100", company: "Qatar Foundation", address: "Education City, Doha" },
+        { name: "Mohammed Al-Kuwari", email: "m.kuwari@ooredoo.qa", phone: "+974 6605 4321", company: "Ooredoo", address: "Ooredoo HQ, Doha" },
+        { name: "Fatima Al-Marri", email: "fatima.m@qatarairways.com.qa", phone: "+974 7788 9900", company: "Qatar Airways", address: "Doha, Qatar" },
+        { name: "Jasim Al-Sulaiti", email: "jasim@mwt.gov.qa", phone: "+974 4455 6677", company: "Minister of Transport", address: "Doha Corniche" },
+        { name: "Noura Bin Hamad", email: "noura@qnb.com", phone: "+974 4440 7777", company: "QNB", address: "Al Corniche, Doha" },
+        { name: "Yousif Al-Hajri", email: "yousif@ashghal.gov.qa", phone: "+974 4495 2222", company: "Ashghal", address: "Doha, Qatar" },
+        { name: "Reem Al-Hashimi", email: "reem@expo2023.qa", phone: "+974 5566 7788", company: "Expo 2023 Doha", address: "Al Bidda Park" },
+        { name: "Abdullah Ali", email: "abdullah@qapco.com.qa", phone: "+974 4477 0000", company: "QAPCO", address: "Mesaieed, Qatar" },
+    ];
 
-    const customer2 = await prisma.customer.create({
-        data: {
-            name: "Sara Khalil",
-            email: "sara@outlook.com",
-            phone: "+971509876543",
-            company: "Dubai Finance",
-            address: "Dubai, UAE",
-            userId: employee.id,
-        }
-    });
+    const customers = [];
+    for (const data of customersData) {
+        const c = await prisma.customer.create({
+            data: { ...data, userId: admin.id }
+        });
+        customers.push(c);
+    }
 
-    // 3. Create Leads
-    const lead1 = await prisma.lead.create({
-        data: {
-            name: "John Doe",
-            email: "john@global.com",
-            phone: "+123456789",
-            company: "Global Corp",
-            status: "NEW",
-            userId: admin.id,
-        }
-    });
+    // 3. Create Leads (20+)
+    const leadNames = [
+        "Robert Smith", "Maria Garcia", "Chen Wei", "Elena Petrova", "Omar Hassan",
+        "Yuki Tanaka", "Sophie Martin", "Lucas Silva", "Amira Zaid", "Hans Muller",
+        "Liam O'Brien", "Isabella Rossi", "Noah Kim", "Emma Wilson", "Ali Al-Farsi",
+        "Chloe Lefebvre", "Daniel Santos", "Layla Mubarak", "Ryan Taylor", "Mina Sato",
+        "Ahmed Khalil", "Grace Lee", "Ivan Novak", "Sofia Hernandez", "Kenji Yamamoto"
+    ];
 
-    const lead2 = await prisma.lead.create({
-        data: {
-            name: "Fatima Ali",
-            email: "fatima@qatar.qa",
-            phone: "+97433221100",
-            status: "UNDER_FOLLOWUP",
-            userId: employee.id,
-        }
-    });
+    const leads = [];
+    for (let i = 0; i < leadNames.length; i++) {
+        const l = await prisma.lead.create({
+            data: {
+                name: leadNames[i],
+                email: `${leadNames[i].toLowerCase().replace(" ", ".")}@prospect.com`,
+                phone: `+971 50 ${Math.floor(Math.random() * 9000000) + 1000000}`,
+                company: `${leadNames[i].split(" ")[1]} Solutions`,
+                status: (["NEW", "UNDER_FOLLOWUP", "INTERESTED"][Math.floor(Math.random() * 3)]) as LeadStatus,
+                userId: i % 2 === 0 ? admin.id : employee.id,
+            }
+        });
+        leads.push(l);
+    }
 
     // 4. Create Activities
-    await prisma.activity.createMany({
-        data: [
-            {
-                type: "CALL",
-                content: "Introduction call with Ahmed",
-                customerId: customer1.id,
-                userId: admin.id,
-            },
-            {
-                type: "EMAIL",
-                content: "Sent proposal to Sara",
-                customerId: customer2.id,
-                userId: employee.id,
-            },
-            {
-                type: "WHATSAPP",
-                content: "WhatsApp follow-up with Fatima",
-                leadId: lead2.id,
-                userId: employee.id,
-            },
-            {
-                type: "TASK",
-                content: "Prepare contract for Riyadh Tech",
-                customerId: customer1.id,
-                userId: admin.id,
-                reminderDate: new Date(Date.now() + 86400000), // Tomorrow
+    const activityTypes: ActivityType[] = ["CALL", "EMAIL", "WHATSAPP", "NOTE", "TASK"];
+    for (let i = 0; i < 30; i++) {
+        const type = activityTypes[Math.floor(Math.random() * activityTypes.length)];
+        const customer = customers[Math.floor(Math.random() * customers.length)];
+        const isCustomer = Math.random() > 0.3;
+        const lead = isCustomer ? null : leads[Math.floor(Math.random() * leads.length)];
+
+        await prisma.activity.create({
+            data: {
+                type,
+                content: `Interaction ${i + 1}: Discussed requirements for upcoming project.`,
+                customerId: isCustomer ? customer.id : null,
+                leadId: lead ? lead.id : null,
+                userId: Math.random() > 0.5 ? admin.id : employee.id,
+                reminderDate: type === "TASK" ? new Date(Date.now() + Math.random() * 604800000) : null,
             }
-        ]
-    });
+        });
+    }
 
-    // 5. Create Tickets
-    const ticket1 = await prisma.ticket.create({
-        data: {
-            title: "Access Issue",
-            description: "Cannot access the portal",
-            priority: "HIGH",
-            status: "OPEN",
-            customerId: customer1.id,
-            userId: admin.id,
-        }
-    });
+    // 5. Create Tickets (15+)
+    const ticketThemes = [
+        "Login Issues", "Invoice Discrepancy", "Feature Request", "Bug Report", "Training Needed",
+        "Downtime Alert", "Access Control", "Data Export Request", "UI Glitch", "API Token Reset",
+        "Contract Renewal", "Payment Failed", "Mobile App Crash", "Slow Performance"
+    ];
 
-    await prisma.ticketMessage.create({
-        data: {
-            content: "We are looking into the access issues.",
-            ticketId: ticket1.id,
-            userId: admin.id,
-        }
-    });
+    for (let i = 0; i < 15; i++) {
+        const customer = customers[Math.floor(Math.random() * customers.length)];
+        await prisma.ticket.create({
+            data: {
+                title: ticketThemes[i % ticketThemes.length] + ` (#${100 + i})`,
+                description: "The client reported an issue during the morning sync. Needs urgent attention.",
+                priority: (["LOW", "MEDIUM", "HIGH"][Math.floor(Math.random() * 3)]) as TicketPriority,
+                status: (["OPEN", "IN_PROGRESS", "CLOSED"][Math.floor(Math.random() * 3)]) as TicketStatus,
+                customerId: customer.id,
+                userId: i % 2 === 0 ? admin.id : employee.id,
+            }
+        });
+    }
 
-    // 6. Create Notifications
+    // 6. Notifications
     await prisma.notification.createMany({
         data: [
-            {
-                userId: admin.id,
-                title: "New Lead Assigned",
-                content: "John Doe has been assigned to you.",
-                type: "INFO",
-            },
-            {
-                userId: admin.id,
-                title: "Urgent Ticket",
-                content: "A high priority ticket has been created.",
-                type: "URGENT",
-                relatedId: ticket1.id,
-            },
-            {
-                userId: employee.id,
-                title: "Task Reminder",
-                content: "You have a task due tomorrow.",
-                type: "REMINDER",
-            }
+            { userId: admin.id, title: "Critical Server Load", content: "High CPU usage detected.", type: "URGENT" },
+            { userId: admin.id, title: "New Lead", content: "Layla Mubarak just registered.", type: "INFO" },
+            { userId: employee.id, title: "Meeting Reminder", content: "Demo at 3 PM.", type: "REMINDER" },
         ]
     });
 
-    // 7. Create Attachments (Mock URLs)
-    await prisma.attachment.create({
-        data: {
-            name: "proposal_v1.pdf",
-            url: "https://example.com/files/proposal.pdf",
-            type: "application/pdf",
-            size: 1024 * 542,
-            customerId: customer1.id,
-            userId: admin.id,
-        }
-    });
-
-    console.log("✅ Seeding complete!");
+    console.log("✅ Seeding complete! Database is now a professional showroom.");
 }
 
 main()

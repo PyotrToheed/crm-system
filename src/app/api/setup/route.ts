@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { sql } from "@/lib/db-lite";
 import { hash } from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-    const dbUrl = process.env.DATABASE_URL?.trim() || "";
-    const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
-
     try {
-        await prisma.$connect();
-
         // 1. Diagnostics: List all tables in the 'public' schema
-        const tables: any[] = await prisma.$queryRaw`
+        const tables = await sql`
             SELECT table_name 
             FROM information_schema.tables 
             WHERE table_schema = 'public'
@@ -22,16 +17,12 @@ export async function GET() {
         // 2. Try to seed ONLY if the User table exists
         if (tableNames.includes('User')) {
             const password = await hash("admin123", 12);
-            await prisma.user.upsert({
-                where: { email: "admin@example.com" },
-                update: { password },
-                create: {
-                    email: "admin@example.com",
-                    name: "Admin User",
-                    password,
-                    role: "ADMIN",
-                },
-            });
+
+            await sql`
+                INSERT INTO "User" ("id", "name", "email", "password", "role", "createdAt", "updatedAt")
+                VALUES (${crypto.randomUUID()}, 'Admin User', 'admin@example.com', ${password}, 'ADMIN', NOW(), NOW())
+                ON CONFLICT ("email") DO UPDATE SET "password" = ${password}, "updatedAt" = NOW()
+            `;
 
             return NextResponse.json({
                 status: "success",
@@ -44,7 +35,7 @@ export async function GET() {
             status: "error",
             message: "Connection is PERFECT, but the database is empty (no tables).",
             foundTables: tableNames,
-            nextStep: "Go to Supabase > SQL Editor > Paste the SQL I just gave you in our chat."
+            nextStep: "Go to Supabase > SQL Editor > Paste the SQL schema to create tables."
         });
     } catch (error: any) {
         return NextResponse.json({
@@ -52,7 +43,5 @@ export async function GET() {
             message: "Connection failed.",
             error: error.message
         }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
     }
 }

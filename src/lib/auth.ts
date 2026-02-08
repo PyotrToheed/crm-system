@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/db";
+import { sql } from "@/lib/db-lite";
 import { compare } from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
@@ -16,9 +16,12 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
 
-                const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
-                });
+                // Use the lite driver instead of Prisma
+                const [user] = await sql`
+                    SELECT * FROM "User" 
+                    WHERE "email" = ${credentials.email} 
+                    LIMIT 1
+                `;
 
                 if (!user) {
                     return null;

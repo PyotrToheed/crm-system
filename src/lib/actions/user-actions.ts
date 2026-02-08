@@ -1,10 +1,18 @@
 "use server";
 
-import { prisma } from "@/lib/db";
+import { sql } from "@/lib/db-lite";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
+
+export interface UserDisplay {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    createdAt: Date;
+}
 
 export async function getUsers() {
     const session = await getServerSession(authOptions);
@@ -12,16 +20,19 @@ export async function getUsers() {
         throw new Error("Unauthorized");
     }
 
-    return await prisma.user.findMany({
-        orderBy: { createdAt: "desc" },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            createdAt: true,
-        },
-    });
+    const rows = await sql`
+        SELECT "id", "name", "email", "role", "createdAt" 
+        FROM "User" 
+        ORDER BY "createdAt" DESC
+    `;
+
+    return rows.map((row: any) => ({
+        id: row.id as string,
+        name: row.name as string,
+        email: row.email as string,
+        role: row.role as string,
+        createdAt: new Date(row.createdAt)
+    } as UserDisplay));
 }
 
 export async function createUser(data: any) {
@@ -33,14 +44,13 @@ export async function createUser(data: any) {
     const { name, email, password, role } = data;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-        data: {
-            name,
-            email,
-            password: hashedPassword,
-            role,
-        },
-    });
+    const [user] = await sql`
+        INSERT INTO "User" (
+            "id", "name", "email", "password", "role", "createdAt", "updatedAt"
+        ) VALUES (
+            ${crypto.randomUUID()}, ${name}, ${email}, ${hashedPassword}, ${role}, NOW(), NOW()
+        ) RETURNING "id", "name", "email", "role", "createdAt"
+    `;
 
     revalidatePath("/dashboard/users");
     return user;
@@ -53,16 +63,17 @@ export async function updateUser(id: string, data: any) {
     }
 
     const { name, email, password, role } = data;
-    let updateData: any = { name, email, role };
+    const updateData: any = { name, email, role, updatedAt: new Date() };
 
     if (password) {
         updateData.password = await bcrypt.hash(password, 10);
     }
 
-    const user = await prisma.user.update({
-        where: { id },
-        data: updateData,
-    });
+    const [user] = await sql`
+        UPDATE "User" SET ${sql(updateData)}
+        WHERE "id" = ${id}
+        RETURNING "id", "name", "email", "role", "createdAt"
+    `;
 
     revalidatePath("/dashboard/users");
     return user;
@@ -79,9 +90,7 @@ export async function deleteUser(id: string) {
         throw new Error("Cannot delete your own account");
     }
 
-    await prisma.user.delete({
-        where: { id },
-    });
+    await sql`DELETE FROM "User" WHERE "id" = ${id}`;
 
     revalidatePath("/dashboard/users");
     return { success: true };

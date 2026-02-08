@@ -1,17 +1,12 @@
-import { PrismaClient } from "@prisma/client";
+/**
+ * DB.ts is now disabled to save memory on cPanel.
+ * All database queries have been migrated to src/lib/db-lite.ts 
+ * using the lightweight postgres.js driver.
+ */
 
-const prismaClientSingleton = () => {
-    return new PrismaClient({
-        log: ["query"],
-    });
-};
+// We export a dummy object to prevent build errors if any residual references exist,
+// but all active code paths should now use the 'sql' export from db-lite.ts.
 
-declare global {
-    var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>;
-}
-
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+const prisma = {} as any;
 
 export { prisma };
-
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;

@@ -19,27 +19,30 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     header: {
-        fontSize: 18,
+        fontSize: 16,
         marginBottom: 10,
         color: "#2563eb",
         borderBottomWidth: 1,
         borderBottomColor: "#e2e8f0",
         paddingBottom: 5,
+        fontWeight: "bold",
     },
     row: {
         flexDirection: "row",
         borderBottomWidth: 1,
         borderBottomColor: "#f1f5f9",
-        paddingVertical: 8,
+        paddingVertical: 6,
+        alignItems: "center",
     },
     cell: {
         flex: 1,
-        fontSize: 10,
+        fontSize: 9,
+        color: "#334155",
     },
-    label: {
+    boldCell: {
+        fontSize: 9,
         fontWeight: "bold",
-        fontSize: 12,
-        marginBottom: 5,
+        color: "#0f172a",
     },
     statsContainer: {
         flexDirection: "row",
@@ -47,21 +50,33 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     statBox: {
-        padding: 10,
+        padding: 12,
         backgroundColor: "#f8fafc",
-        borderRadius: 5,
+        borderRadius: 8,
         width: "30%",
         alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#f1f5f9",
     },
     statValue: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: "bold",
         color: "#2563eb",
     },
     statLabel: {
         fontSize: 10,
         color: "#64748b",
-        marginTop: 5,
+        marginTop: 4,
+    },
+    typeBadge: {
+        fontSize: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        backgroundColor: "#f1f5f9",
+        marginRight: 10,
+        textAlign: "center",
+        width: 60,
     }
 });
 
@@ -76,6 +91,12 @@ interface ReportPDFProps {
             name: string;
             activities: number;
             tickets: number;
+        }[];
+        detailedLogs: {
+            type: string;
+            subject: string;
+            userName: string;
+            date: string;
         }[];
     };
     translations: any;
@@ -102,17 +123,23 @@ export const ReportPDF = ({ data, translations }: ReportPDFProps) => (
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.header}>{translations.employee_performance}</Text>
-                <View style={[styles.row, { borderBottomColor: "#2563eb", borderBottomWidth: 2 }]}>
-                    <Text style={[styles.cell, { fontWeight: "bold" }]}>{translations.user_name}</Text>
-                    <Text style={[styles.cell, { textAlign: "center", fontWeight: "bold" }]}>{translations.activity_count}</Text>
-                    <Text style={[styles.cell, { textAlign: "center", fontWeight: "bold" }]}>{translations.ticket_count}</Text>
+                <Text style={styles.header}>Itemized Activity Audit</Text>
+                <View style={[styles.row, { borderBottomColor: "#2563eb", borderBottomWidth: 2, backgroundColor: "#f8fafc" }]}>
+                    <Text style={[styles.cell, { flex: 0.8, fontWeight: "bold", paddingLeft: 5 }]}>Date</Text>
+                    <Text style={[styles.cell, { flex: 0.8, fontWeight: "bold" }]}>User</Text>
+                    <Text style={[styles.cell, { flex: 0.6, fontWeight: "bold" }]}>Action</Text>
+                    <Text style={[styles.cell, { flex: 1.8, fontWeight: "bold" }]}>Subject</Text>
                 </View>
-                {data.employeePerformance.map((emp, i) => (
+                {data.detailedLogs.map((log, i) => (
                     <View key={i} style={styles.row}>
-                        <Text style={styles.cell}>{emp.name}</Text>
-                        <Text style={[styles.cell, { textAlign: "center" }]}>{emp.activities}</Text>
-                        <Text style={[styles.cell, { textAlign: "center" }]}>{emp.tickets}</Text>
+                        <Text style={[styles.cell, { flex: 0.8, paddingLeft: 5 }]}>
+                            {new Date(log.date).toLocaleDateString()}
+                        </Text>
+                        <Text style={[styles.cell, { flex: 0.8, fontWeight: "bold" }]}>{log.userName}</Text>
+                        <View style={[styles.typeBadge, { flex: 0.6 }]}>
+                            <Text>{log.type}</Text>
+                        </View>
+                        <Text style={[styles.cell, { flex: 1.8 }]}>{log.subject}</Text>
                     </View>
                 ))}
             </View>

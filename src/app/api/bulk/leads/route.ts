@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, LeadStatus } from "@prisma/client";
+import { sql } from "@/lib/db-lite";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-
-const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
     try {
@@ -21,24 +19,27 @@ export async function POST(req: Request) {
 
         // Map and validate
         const leadsToCreate = data.map((item: any) => ({
+            id: crypto.randomUUID(),
             name: item.name || item.Name || "Unknown Lead",
             email: item.email || item.Email || null,
             phone: item.phone || item.Phone || null,
             company: item.company || item.Company || null,
             address: item.address || item.Address || null,
-            status: "NEW" as LeadStatus,
+            status: "NEW",
             userId: (session.user as any).id,
-        })).filter((l: any) => l.name !== "Unknown Lead"); // Basic filtering
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        })).filter((l: any) => l.name !== "Unknown Lead");
 
         if (leadsToCreate.length === 0) {
             return NextResponse.json({ error: "No valid leads found" }, { status: 400 });
         }
 
-        const result = await prisma.lead.createMany({
-            data: leadsToCreate,
-        });
+        await sql`
+            INSERT INTO "Lead" ${sql(leadsToCreate)}
+        `;
 
-        return NextResponse.json({ count: result.count, success: true });
+        return NextResponse.json({ count: leadsToCreate.length, success: true });
     } catch (error: any) {
         console.error("Bulk Import Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });

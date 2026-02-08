@@ -24,10 +24,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "../providers/i18n-context";
 import { createActivity } from "@/lib/actions/activity-actions";
 import { toast } from "sonner";
-import { ActivityType } from "@prisma/client";
+const ActivityType = ["WHATSAPP", "EMAIL", "CALL", "NOTE", "TASK"] as const;
+type ActivityType = typeof ActivityType[number];
 
 const formSchema = z.object({
-    type: z.nativeEnum(ActivityType),
+    type: z.enum(ActivityType as any),
     content: z.string().min(1, "Required"),
     customerId: z.string().optional(),
     leadId: z.string().optional(),
@@ -87,7 +88,7 @@ export function ActivityForm({ onSuccess, customers = [], leads = [], initialCus
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {Object.values(ActivityType).map((type) => (
+                                    {ActivityType.map((type) => (
                                         <SelectItem key={type} value={type}>
                                             {t(`activities.types.${type}`)}
                                         </SelectItem>

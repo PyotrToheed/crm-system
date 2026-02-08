@@ -3,6 +3,7 @@ import { Cairo } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { I18nProvider } from "@/components/providers/i18n-context";
+import { Providers } from "@/components/providers/session-provider";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
   description: "Advanced CRM System",
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,8 +25,10 @@ export default function RootLayout({
     <html lang="ar" suppressHydrationWarning>
       <body className={`${cairo.variable} font-sans antialiased`}>
         <I18nProvider>
-          {children}
-          <Toaster position="top-center" richColors />
+          <Providers>
+            {children}
+            <Toaster position="top-center" richColors />
+          </Providers>
         </I18nProvider>
       </body>
     </html>

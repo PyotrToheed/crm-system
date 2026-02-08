@@ -11,7 +11,10 @@ export default async function ReportsPage() {
         redirect("/login");
     }
 
-    if ((session.user as any).role !== "ADMIN") {
+    const user = session.user as any;
+
+    // Allow Operations Manager and ADMIN to see reports
+    if (user.role !== "ADMIN" && user.name !== "Operations Manager") {
         redirect("/dashboard");
     }
 

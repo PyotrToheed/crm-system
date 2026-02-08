@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/db";
+import { sql } from "@/lib/db-lite";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -11,58 +11,50 @@ export async function globalSearch(query: string) {
     const userId = (session.user as any).id;
     const isAdmin = (session.user as any).role === "ADMIN";
 
-    const commonWhere = !isAdmin ? { userId } : {};
+    const commonWhere = isAdmin ? sql`` : sql`AND "userId" = ${userId}`;
 
-    const results = await Promise.all([
-        prisma.customer ? prisma.customer.findMany({
-            where: {
-                OR: [
-                    { name: { contains: query } },
-                    { email: { contains: query } },
-                    { phone: { contains: query } },
-                ],
-                ...commonWhere,
-            },
-            take: 5,
-        }) : Promise.resolve([]),
-        prisma.lead ? prisma.lead.findMany({
-            where: {
-                OR: [
-                    { name: { contains: query } },
-                    { email: { contains: query } },
-                    { phone: { contains: query } },
-                ],
-                status: { not: "CONVERTED" },
-                ...commonWhere,
-            },
-            take: 5,
-        }) : Promise.resolve([]),
-        prisma.activity ? prisma.activity.findMany({
-            where: {
-                content: { contains: query },
-                ...commonWhere,
-            },
-            include: { user: { select: { name: true } } },
-            take: 5,
-        }) : Promise.resolve([]),
-        prisma.ticket ? prisma.ticket.findMany({
-            where: {
-                OR: [
-                    { title: { contains: query } },
-                    { description: { contains: query } },
-                ],
-                ...commonWhere,
-            },
-            take: 5,
-        }) : Promise.resolve([]),
+    const [customers, leads, activities, tickets] = await Promise.all([
+        sql`
+            SELECT * FROM "Customer" 
+            WHERE ("name" ILIKE ${'%' + query + '%'} OR "email" ILIKE ${'%' + query + '%'} OR "phone" ILIKE ${'%' + query + '%'})
+            ${commonWhere}
+            LIMIT 5
+        `,
+        sql`
+            SELECT * FROM "Lead" 
+            WHERE ("name" ILIKE ${'%' + query + '%'} OR "email" ILIKE ${'%' + query + '%'} OR "phone" ILIKE ${'%' + query + '%'})
+            AND "status" != 'CONVERTED'
+            ${commonWhere}
+            LIMIT 5
+        `,
+        sql`
+            SELECT a.*, u.name as "userName"
+            FROM "Activity" a
+            JOIN "User" u ON a."userId" = u."id"
+            WHERE a."content" ILIKE ${'%' + query + '%'}
+            ${commonWhere}
+            LIMIT 5
+        `,
+        sql`
+            SELECT t.*, c.name as "customerName"
+            FROM "Ticket" t
+            JOIN "Customer" c ON t."customerId" = c.id
+            WHERE (t."title" ILIKE ${'%' + query + '%'} OR t."description" ILIKE ${'%' + query + '%'})
+            ${commonWhere}
+            LIMIT 5
+        `,
     ]);
-
-    const [customers, leads, activities, tickets] = results;
 
     return {
         customers,
         leads,
-        activities,
-        tickets,
+        activities: activities.map(a => ({
+            ...a,
+            user: { name: (a as any).userName }
+        })),
+        tickets: tickets.map(t => ({
+            ...t,
+            customer: { name: (t as any).customerName }
+        })),
     };
 }
