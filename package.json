@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push && next build",
+    "build": "prisma generate && next build",
     "start": "NODE_OPTIONS='--max-old-space-size=300' next start -p 3010",
     "lint": "eslint"
   },
